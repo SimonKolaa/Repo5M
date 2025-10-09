@@ -186,3 +186,10 @@ cursor.execute("SELECT * FROM tabella WHERE colonna=?", (valore,))
 fetchall() = prendi tutte le righe, vanno usati quasi sempre per le query
 fetchone() = prendi una riga
 conn.rollback() = annulla le modifiche
+
+LIMIT = ha un limite di righe che può prendere
+
+LIKE ci permette di usare le wildcard, per ricerche parziali (simile a)
+IN = per cercare più valori in una colonna
+_ = un carattere
+% = più caratteri o anche zero caratteri

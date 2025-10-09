@@ -1,0 +1,22 @@
+erDiagram
+    AUTORE {
+        STR id PK
+        str name
+        str cognome
+    }
+    LIBRO {
+        str id PK
+        str titolo
+        int AUTORE_id FK
+        date anno
+        str genere
+    }
+    PRESTITI{
+        string id PK
+        int LIBRO_id FK
+        date data_prestito
+        str autore
+        date data_restituzione
+    }
+    AUTORE ||--o{ LIBRO: "scrive"
+    LIBRO ||--o{ PRESTITI: "viene prestato"
