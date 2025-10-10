@@ -193,3 +193,128 @@ LIKE ci permette di usare le wildcard, per ricerche parziali (simile a)
 IN = per cercare più valori in una colonna
 _ = un carattere
 % = più caratteri o anche zero caratteri
+
+## Modello per la verifica (esercizio Studenti + Esami) — sintetico
+
+Schema SQL essenziale:
+```sql
+CREATE TABLE Studenti (
+  Matricola INTEGER PRIMARY KEY,
+  Nome TEXT NOT NULL,
+  Cognome TEXT NOT NULL
+);
+
+CREATE TABLE Esami (
+  Id INTEGER PRIMARY KEY AUTOINCREMENT,
+  Matricola INTEGER NOT NULL,
+  Corso TEXT NOT NULL,
+  Voto INTEGER,
+  FOREIGN KEY (Matricola) REFERENCES Studenti(Matricola)
+);
+```
+
+Dataclass (tipi):
+```python
+from dataclasses import dataclass
+from typing import Optional
+
+@dataclass
+class Student:
+    matricola: int
+    nome: str
+    cognome: str
+
+@dataclass
+class Exam:
+    id: Optional[int]
+    matricola: int
+    corso: str
+    voto: Optional[int]
+```
+
+Funzioni consigliate (con type hints):
+- get_connection(db_path: str) -> sqlite3.Connection
+- create_tables(conn: sqlite3.Connection) -> None
+- insert_students(conn, students: List[Student]) -> None  (INSERT OR IGNORE)
+- insert_exams(conn, exams: List[Exam]) -> None
+- list_students(conn) -> List[Student]
+- exams_by_student(conn, matricola: int) -> List[Tuple[str, Optional[int]]]
+- exams_count_by_student(conn) -> List[Tuple[int, int]]
+
+Query richieste:
+1) Elenco studenti (Matricola, Nome, Cognome)
+2) Corsi e voti di una matricola (es. 101)
+3) Numero esami per studente (GROUP BY Matricola)
+
+Note rapide per la correzione: usare placeholder `?`, separare funzioni (schema/inserimento/query), testare con `':memory:'`, controllare type hints e idempotenza.
+## Modello basato sull'esercizio del professore (Studenti + Esami)
+
+Di seguito una versione sintetica e direttamente applicabile dell'esercizio che ha usato il docente: schema, dataclass, funzioni e query richieste. Usa questa sezione come modello per la verifica.
+
+Schema SQL (essenziale):
+```sql
+CREATE TABLE IF NOT EXISTS Studenti (
+  Matricola INTEGER PRIMARY KEY,
+  Nome TEXT NOT NULL,
+  Cognome TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS Esami (
+  Id INTEGER PRIMARY KEY AUTOINCREMENT,
+  Matricola INTEGER NOT NULL,
+  Corso TEXT NOT NULL,
+  Voto INTEGER,
+  FOREIGN KEY (Matricola) REFERENCES Studenti(Matricola)
+);
+```
+
+Dataclass (Python, tipizzata):
+```python
+from dataclasses import dataclass
+from typing import Optional
+
+@dataclass
+class Student:
+    matricola: int
+    nome: str
+    cognome: str
+
+@dataclass
+class Exam:
+    id: Optional[int]
+    matricola: int
+    corso: str
+    voto: Optional[int]
+```
+
+Firme di funzione raccomandate (semplici e testabili):
+- get_connection(db_path: str) -> sqlite3.Connection
+- create_tables(conn: sqlite3.Connection) -> None
+- insert_students(conn, students: List[Student]) -> None   (usa INSERT OR IGNORE)
+- insert_exams(conn, exams: List[Exam]) -> None
+- list_students(conn) -> List[Student]
+- exams_by_student(conn, matricola: int) -> List[Tuple[str, Optional[int]]]
+- exams_count_by_student(conn) -> List[Tuple[int, int]]
+
+Query che il docente richiede normalmente (implementare e poter stampare i risultati):
+1. Elenco di tutti gli studenti (Matricola, Nome, Cognome)
+2. Elenco dei corsi e voti sostenuti da uno studente (es. Matricola 101)
+3. Numero di esami sostenuti per ciascuno studente (GROUP BY Matricola)
+
+Buone pratiche e note per la correzione:
+- Usare sempre placeholder `?` nelle query per sicurezza e correttezza.
+- Usare `executemany` per inserimenti bulk; per gli studenti preferire `INSERT OR IGNORE` per idempotenza.
+- Separare: schema (create_tables), inserimenti (insert_*), e query (query_*). Funzioni piccole = più facilmente testabili.
+- Per i test usare `':memory:'` per connessione in-memory.
+- Test consigliati: flusso base (inserisci 2 studenti e i loro esami), controllo conteggi, comportamento su matricola inesistente e su voto NULL.
+
+Esempio rapido di uso (conciso):
+1) conn = get_connection(':memory:')
+2) create_tables(conn)
+3) insert_students(...); insert_exams(...)
+4) print(list_students(conn))
+   print(exams_by_student(conn, 101))
+   print(exams_count_by_student(conn))
+   conn.commit(); conn.close()
+
+Questa sezione è volutamente sintetica: se vuoi la trasformo in uno skeleton pronto da consegnare agli studenti (con passaggi mancanti da completare) o in una versione per il docente (soluzione completa).

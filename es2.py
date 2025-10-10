@@ -110,19 +110,23 @@ for libro in libri:
 
 
 # query_libri_per_autore(autore_id): Restituisce tutti i libri di un autore specifico (usa JOIN).
-
-cursor.execute("""
-               SELECT Libri.titolo, Autori.nome, Autori.cognome 
-               FROM Libri 
-               JOIN Autori ON Libri.autore_id = Autori.id 
-               WHERE Autori.id = ?""", (1,)) #restituisce l'autore e tutti i libri che ha scritto
+def query_libri_per_autore(autore_id):
+    cursor.execute("""
+                   SELECT Libri.titolo, Autori.nome, Autori.cognome
+                   FROM Libri
+                   JOIN Autori ON Libri.autore_id = Autori.id
+                   WHERE Autori.id = ?""", (autore_id,))
+    return cursor.fetchall()
 
 #query_prestiti_per_utente(utente): Restituisce i prestiti di un utente (usa JOIN).
-cursor.execute("""
-               SELECT Prestiti.utente, Libri.titolo 
-               FROM Prestiti 
-               JOIN Libri ON Prestiti.libro_id = Libri.id 
-               WHERE Libri.autore_id = ?""", (1,))
+def query_prestiti_per_utente(utente):
+    cursor.execute("""
+                   SELECT Prestiti.libro_id, Libri.titolo, Prestiti.data_prestito, Prestiti.data_restituzione
+                   FROM Prestiti
+                   JOIN Libri ON Prestiti.libro_id = Libri.id
+                   WHERE Prestiti.utente = ?""", (utente,))
+    return cursor.fetchall()
+
 
 #Restituisce il numero di libri per genere (usa GROUP BY).
 cursor.execute("""
@@ -136,19 +140,39 @@ for libro in libri_per_genere:
     print(f"{libro}")
 
 # # query_autori_con_piu_libri(): Restituisce gli autori ordinati per numero di libri (usa JOIN, GROUP BY, ORDER BY).
-cursor.execute("""
+def query_autori_con_piu_libri():
+ cursor.execute("""
                 SELECT A.nome, A.cognome, COUNT(*) as numero_libri
                 FROM Libri L
-                JOIN AUTORE A
-                ON L.AUTORE_id = A.id
+                JOIN Autori A
+                ON L.autore_id = A.id
                 GROUP BY A.id
                 ORDER BY numero_libri DESC
                 """)
 
 # #query_prestiti_non_restituiti(): Restituisce i prestiti non ancora restituiti (data_restituzione IS NULL).
-cursor.execute("""
-                SELECT data_prestito,id as prestiti_non_restituiti
-                WHERE data_restituzione IS NULL
-                FROM PRESTITI
-                 """)
+def query_prestiti_non_restituiti():
+    cursor.execute("""
+                    SELECT data_prestito,id as prestiti_non_restituiti
+                    FROM PRESTITI
+                    WHERE data_restituzione IS NULL
+                     """)
+    return cursor.fetchall()
 
+
+#Elenco di tutti i libri con titolo, anno e nome dell'autore (usa JOIN).
+cursor.execute("""
+               SELECT L.titolo, L.anno, A.nome, A.cognome
+               FROM Libri L
+               JOIN Autori A
+               ON L.autore_id = A.id
+               """)
+elenco_libri = cursor.fetchall()
+
+#Elenco di tutti i prestiti con titolo del libro, utente e data di prestito (usa JOIN).
+cursor.execute("""
+               SELECT L.titolo, P.utente, P.data_prestito
+               FROM Prestiti P
+               JOIN Libri L ON P.libro_id = L.id
+               """)
+elenco_prestiti = cursor.fetchall()
