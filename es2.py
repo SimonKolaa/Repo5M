@@ -159,6 +159,7 @@ def query_prestiti_non_restituiti():
                      """)
     return cursor.fetchall()
 
+#esercizio 6
 
 #Elenco di tutti i libri con titolo, anno e nome dell'autore (usa JOIN).
 cursor.execute("""
@@ -176,3 +177,10 @@ cursor.execute("""
                JOIN Libri L ON P.libro_id = L.id
                """)
 elenco_prestiti = cursor.fetchall()
+
+#Libri pubblicati dopo il 2020. 
+cursor.execute("""
+               SELECT titolo, anno
+               FROM Libri
+               WHERE anno > 2020
+               """)
