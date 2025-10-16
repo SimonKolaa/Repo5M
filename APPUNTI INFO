@@ -84,6 +84,7 @@ Nella relazione 1:N, metto una colonna nella tabella "N" che fa riferimento alla
 
 ### REGOLA per N:N
 Nella relazione N:N creo una tabella intermedia con due Foreign Key
+con n-n faccio due classi e in quella intermedia metto le due pk che sono fk e diventano la PK di quella in mezzo (scomposta)
 ```sql
 -- Esempio: STUDENTE (N) --- (N) CORSO
 -- Creo tabella: ISCRIZIONE (ID_STUDENTE, ID_CORSO)

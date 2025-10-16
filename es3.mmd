@@ -1,0 +1,52 @@
+erDiagram
+
+Azienda {
+    int id PK
+    str partita_iva
+    str nome
+    str indirizzo
+    str comune
+    str provincia
+    str regione
+}
+
+Vigneto {
+    int id PK
+    str nome
+    int ettari
+    str localita
+    str comune
+    str classe_di_esposizione
+    str numero_filiali
+    int azienda_id FK
+}
+
+Parcella {
+    int id PK
+    int ettari
+    str classe_di_esposizione
+    int vigneto_id FK
+}
+
+Vitigno {
+    int id PK
+    str nome
+    str comune
+    str colore
+    str origine
+}
+
+Etichetta {
+    int id PK
+    str nome
+    str annata
+    str tipologia
+    int azienda_id FK
+    int vitigno_id FK
+    
+}
+
+Azienda ||--o{ Vigneto : possiede
+Vigneto ||--o{ Parcella : suddiviso
+Azienda ||--o{ Etichetta : produce
+Etichetta }o--|| Vitigno : associata

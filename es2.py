@@ -184,3 +184,4 @@ cursor.execute("""
                FROM Libri
                WHERE anno > 2020
                """)
+
