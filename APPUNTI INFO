@@ -124,9 +124,13 @@ SELECT NOME, ETA FROM STUDENTE;
 SELECT * FROM STUDENTE WHERE ETA > 18;
 SELECT NOME FROM STUDENTE WHERE CITTA = 'Milano';
 ```
+### HAVING
+`HAVING` = filtra i risultati di aggregazioni 
+(usato con GROUP BY)
 
 ### GROUP BY
 `GROUP BY` = raggruppa righe per calcolare aggregazioni
+
 
 ```sql
 -- Esempio:
@@ -143,7 +147,10 @@ SELECT S.NOME, C.NOME_CLASSE
 FROM STUDENTE S 
 JOIN CLASSE C ON S.ID_CLASSE = C.ID_CLASSE;
 ```
-
+### LEFT JOIN
+mantiene le informazioni della tabella di sinistra
+anche se non ci sono corrispondenze nella tabella di destra
+la tabella di sinistra è quella dopo il FROM
 ### REGOLA PRATICA
 - Se vedo "per ogni" → uso `GROUP BY` al 90%
 - Se ci sono due o più tabelle collegate → uso `JOIN`

@@ -1,0 +1,49 @@
+erDiagram
+
+    Azienda {
+        str id PK
+        str nome
+        str dischi
+        str CD
+        str vinili
+    }
+    Negozio {
+        str id PK
+        str nome
+        str indirizzo
+        str città
+        str Azienda_id FK
+        str Dipendente_id FK
+    }
+    Dipendente {
+        str id PK
+        str nome
+        str ruolo
+        str Negozio_id FK
+    }
+    Artista {
+        str id PK
+        str nome
+        str genere
+    }
+    Vendita {
+        str id PK
+        date data
+        float totale
+        str Album_id FK
+    }
+    Album   {
+        str id PK
+        str titolo
+        date data_pubblicazione
+        float prezzo
+        str Artista_id FK
+        str Vendita_id FK
+        }
+
+    Azienda ||--o{ Negozio : possiede
+    Negozio ||--o{ Vendita : gestisce
+    Negozio ||--o{ Dipendente : lavorano
+    Dipendente ||--o{ Negozio : impiegato
+    Artista ||--o{ Album : produce
+    Vendita ||--o{ Album : include
