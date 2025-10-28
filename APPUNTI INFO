@@ -294,35 +294,330 @@ class Exam:
     corso: str
     voto: Optional[int]
 ```
+#  GUIDA COMPLETA SQL E QUERY PER LA VERIFICA
 
-Firme di funzione raccomandate (semplici e testabili):
-- get_connection(db_path: str) -> sqlite3.Connection
-- create_tables(conn: sqlite3.Connection) -> None
-- insert_students(conn, students: List[Student]) -> None   (usa INSERT OR IGNORE)
-- insert_exams(conn, exams: List[Exam]) -> None
-- list_students(conn) -> List[Student]
-- exams_by_student(conn, matricola: int) -> List[Tuple[str, Optional[int]]]
-- exams_count_by_student(conn) -> List[Tuple[int, int]]
+Questa guida unisce **tutti gli esempi e spiegazioni fondamentali** per affrontare la verifica di informatica su **diagramma ER, SQL e query**.
 
-Query che il docente richiede normalmente (implementare e poter stampare i risultati):
-1. Elenco di tutti gli studenti (Matricola, Nome, Cognome)
-2. Elenco dei corsi e voti sostenuti da uno studente (es. Matricola 101)
-3. Numero di esami sostenuti per ciascuno studente (GROUP BY Matricola)
+---
 
-Buone pratiche e note per la correzione:
-- Usare sempre placeholder `?` nelle query per sicurezza e correttezza.
-- Usare `executemany` per inserimenti bulk; per gli studenti preferire `INSERT OR IGNORE` per idempotenza.
-- Separare: schema (create_tables), inserimenti (insert_*), e query (query_*). Funzioni piccole = più facilmente testabili.
-- Per i test usare `':memory:'` per connessione in-memory.
-- Test consigliati: flusso base (inserisci 2 studenti e i loro esami), controllo conteggi, comportamento su matricola inesistente e su voto NULL.
+## 📘 STRUTTURA BASE (esempio)
 
-Esempio rapido di uso (conciso):
-1) conn = get_connection(':memory:')
-2) create_tables(conn)
-3) insert_students(...); insert_exams(...)
-4) print(list_students(conn))
-   print(exams_by_student(conn, 101))
-   print(exams_count_by_student(conn))
-   conn.commit(); conn.close()
+Immagina che dal testo ricavi questo schema ER:
 
-Questa sezione è volutamente sintetica: se vuoi la trasformo in uno skeleton pronto da consegnare agli studenti (con passaggi mancanti da completare) o in una versione per il docente (soluzione completa).
+* **Studente (Matricola, Nome, Cognome)**
+* **Corso (ID_Corso, NomeCorso)**
+* **Esame (ID_Esame, Matricola, ID_Corso, Voto)** → relazione molti-a-molti (Studente–Corso)
+
+### SQL — Creazione tabelle (DDL)
+
+```sql
+CREATE TABLE Studente (
+  Matricola INTEGER PRIMARY KEY,
+  Nome TEXT NOT NULL,
+  Cognome TEXT NOT NULL
+);
+
+CREATE TABLE Corso (
+  ID_Corso INTEGER PRIMARY KEY,
+  NomeCorso TEXT NOT NULL
+);
+
+CREATE TABLE Esame (
+  ID_Esame INTEGER PRIMARY KEY AUTOINCREMENT,
+  Matricola INTEGER,
+  ID_Corso INTEGER,
+  Voto INTEGER,
+  FOREIGN KEY (Matricola) REFERENCES Studente(Matricola),
+  FOREIGN KEY (ID_Corso) REFERENCES Corso(ID_Corso)
+);
+```
+
+---
+
+##  QUERY BASE (DML)
+
+###  Mostrare tutti i dati
+
+```sql
+SELECT * FROM Studente;
+```
+
+ “*” vuol dire “tutte le colonne”. È utile per controllare i dati velocemente.
+
+---
+
+### 2️⃣ Selezionare alcune colonne
+
+```sql
+SELECT Nome, Cognome FROM Studente;
+```
+
+ Mostra solo nome e cognome.
+
+---
+
+### 3️⃣ Filtrare righe — `WHERE`
+
+```sql
+SELECT * FROM Esame WHERE Voto >= 28;
+```
+
+Mostra solo gli esami con voto ≥ 28.
+
+---
+
+### 4️⃣ Ordinare — `ORDER BY`
+
+```sql
+SELECT * FROM Studente ORDER BY Cognome ASC, Nome ASC;
+```
+
+Ordina alfabeticamente per cognome e poi per nome.
+
+---
+
+### 5️⃣ Raggruppare — `GROUP BY`
+
+```sql
+SELECT Matricola, COUNT(*) AS Numero_Esami
+FROM Esame
+GROUP BY Matricola;
+```
+
+Conta quanti esami ha fatto ogni studente.
+Regola: se nel testo leggi **“per ogni”**, devi usare **GROUP BY**.
+
+---
+
+### 6️⃣ Filtrare gruppi — `HAVING`
+
+```sql
+SELECT Matricola, COUNT(*) AS Numero_Esami
+FROM Esame
+GROUP BY Matricola
+HAVING COUNT(*) >= 3;
+```
+
+ Mostra solo gli studenti che hanno fatto **almeno 3 esami**.
+
+---
+
+### 7️⃣ Media, somma, massimo, minimo
+
+```sql
+SELECT AVG(Voto) AS MediaVoti FROM Esame;
+SELECT MAX(Voto) AS Migliore, MIN(Voto) AS Peggiore FROM Esame;
+```
+
+ Usi le **funzioni aggregate**: `AVG`, `MAX`, `MIN`, `COUNT`, `SUM`.
+
+---
+
+### 8️⃣ LIKE e ricerche parziali
+
+```sql
+SELECT * FROM Studente WHERE Nome LIKE 'Mar%';
+```
+
+`%` = qualunque sequenza di caratteri → trova nomi che **iniziano con “Mar”** (Marco, Martina...).
+
+---
+
+### 9️⃣ LIMIT e IN
+
+```sql
+SELECT * FROM Esame LIMIT 5;
+SELECT * FROM Studente WHERE Città IN ('Milano', 'Torino');
+```
+
+👉 `LIMIT` mostra solo le prime righe; `IN` filtra più valori insieme.
+
+---
+
+# SQL JOIN e QUERY spiegate per la verifica
+
+##  Cosa fa un JOIN
+
+Un **JOIN** serve per **collegare i dati di due o più tabelle** usando una colonna in comune (di solito una **chiave esterna**, FK).
+È quello che ti permette di “mettere insieme” le informazioni.
+
+### Esempio pratico
+
+Abbiamo tre tabelle: `Studente`, `Corso` ed `Esame` (vedi sopra).
+
+### Obiettivo
+
+Voglio sapere: **quale studente ha sostenuto quale corso e con che voto**.
+
+---
+
+##  INNER JOIN (il più usato)
+
+```sql
+SELECT S.Nome, S.Cognome, C.NomeCorso, E.Voto
+FROM Studente S
+JOIN Esame E ON S.Matricola = E.Matricola
+JOIN Corso C ON E.ID_Corso = C.ID_Corso;
+```
+
+### Spiegazione passo-passo
+
+1. `FROM Studente S` → la tabella principale è `Studente`.
+   `S` è un **alias**: un nome abbreviato per scrivere meno.
+   S = Studente, C = Corso, E = Esame
+2. `JOIN Esame E ON S.Matricola = E.Matricola` → collega Studente con Esame tramite Matricola.
+3. `JOIN Corso C ON E.ID_Corso = C.ID_Corso` → collega Esame con Corso.
+4. `SELECT ...` → mostra solo le colonne utili.
+
+### Cosa ottengo
+
+| Nome  | Cognome | NomeCorso   | Voto |
+| ----- | ------- | ----------- | ---- |
+| Mario | Rossi   | Matematica  | 28   |
+| Luca  | Bianchi | Informatica | 30   |
+
+Solo gli studenti che **hanno fatto almeno un esame** compaiono (gli altri no).
+
+---
+
+## LEFT JOIN
+
+Serve per **non perdere i dati della tabella di sinistra** anche se non ci sono corrispondenze nella tabella di destra.
+
+```sql
+SELECT S.Nome, S.Cognome, C.NomeCorso, E.Voto
+FROM Studente S
+LEFT JOIN Esame E ON S.Matricola = E.Matricola
+LEFT JOIN Corso C ON E.ID_Corso = C.ID_Corso;
+```
+
+### Spiegazione
+
+* Se uno studente **non ha ancora fatto esami**, apparirà comunque nel risultato.
+* Le colonne di `Esame` o `Corso` saranno **NULL** (vuote).
+
+### Esempio
+
+| Nome  | Cognome | NomeCorso  | Voto |
+| ----- | ------- | ---------- | ---- |
+| Mario | Rossi   | Matematica | 28   |
+| Luca  | Bianchi | NULL       | NULL |
+
+👉 `LEFT JOIN` = mostra **tutti gli studenti**, anche se non hanno corrispondenze negli esami.
+
+---
+
+## JOIN: Schema mentale
+
+| Tipo JOIN    | Cosa mostra                                                            | Quando usarlo                                                                 |
+| ------------ | ---------------------------------------------------------------------- | ----------------------------------------------------------------------------- |
+| `INNER JOIN` | Solo le righe che coincidono in entrambe le tabelle                    | Quando vuoi solo i dati collegati                                             |
+| `LEFT JOIN`  | Tutte le righe della tabella di sinistra + corrispondenze (se ci sono) | Quando vuoi vedere anche chi non ha corrispondenze (es. studenti senza esami) |
+
+---
+
+## Query spiegate passo-passo
+
+### 1️⃣ Elenco studenti con corsi e voti
+
+```sql
+SELECT S.Nome, S.Cognome, C.NomeCorso, E.Voto
+FROM Studente S
+JOIN Esame E ON S.Matricola = E.Matricola
+JOIN Corso C ON E.ID_Corso = C.ID_Corso;
+```
+
+👉 Mostra nome, cognome, corso e voto.
+Serve quando hai **più tabelle collegate** tra loro.
+
+---
+
+### 2️⃣ Numero di esami per studente
+
+```sql
+SELECT S.Nome, S.Cognome, COUNT(E.ID_Esame) AS NumeroEsami
+FROM Studente S
+JOIN Esame E ON S.Matricola = E.Matricola
+GROUP BY S.Matricola;
+```
+
+👉 “Per ogni studente” (`GROUP BY`) conta quanti esami ha fatto (`COUNT`).
+**Regola**: se nel testo c’è scritto “PER OGNI” → usa `GROUP BY`.
+
+---
+
+### 3️⃣ Media dei voti per corso
+
+```sql
+SELECT C.NomeCorso, AVG(E.Voto) AS MediaVoto
+FROM Corso C
+JOIN Esame E ON C.ID_Corso = E.ID_Corso
+GROUP BY C.NomeCorso;
+```
+
+👉 Calcola la media dei voti (`AVG`) raggruppando per corso.
+
+---
+
+### 4️⃣ Studenti con voto 30
+
+```sql
+SELECT S.Nome, S.Cognome, C.NomeCorso, E.Voto
+FROM Studente S
+JOIN Esame E ON S.Matricola = E.Matricola
+JOIN Corso C ON E.ID_Corso = C.ID_Corso
+WHERE E.Voto = 30;
+```
+
+👉 Usa `WHERE` per filtrare solo i voti perfetti.
+
+---
+
+### 5️⃣ Corsi senza esami (LEFT JOIN + IS NULL)
+
+```sql
+SELECT C.NomeCorso
+FROM Corso C
+LEFT JOIN Esame E ON C.ID_Corso = E.ID_Corso
+WHERE E.ID_Esame IS NULL;
+```
+
+👉 Trova i corsi **senza esami associati**.
+Con `LEFT JOIN` mostro tutti i corsi, e con `IS NULL` filtro quelli **senza corrispondenza**.
+
+---
+
+### 6️⃣ Studenti senza esami
+
+```sql
+SELECT S.Nome, S.Cognome
+FROM Studente S
+LEFT JOIN Esame E ON S.Matricola = E.Matricola
+WHERE E.ID_Esame IS NULL;
+```
+
+👉 Stesso principio: `LEFT JOIN` per non perdere gli studenti, `IS NULL` per trovare chi non ha esami.
+
+---
+
+## Riepilogo comandi utili per la verifica
+
+| Situazione nel testo                 | Comando SQL da usare    |
+| ------------------------------------ | ----------------------- |
+| "Elenca tutti..."                    | `SELECT * FROM ...`     |
+| "Solo chi..." o "solo quelli con..." | `WHERE`                 |
+| "Per ogni..."                        | `GROUP BY`              |
+| "Numero di..."                       | `COUNT()`               |
+| "Media di..."                        | `AVG()`                 |
+| "Somma di..."                        | `SUM()`                 |
+| "Studenti senza..."                  | `LEFT JOIN ... IS NULL` |
+| "Studenti con..."                    | `JOIN + WHERE`          |
+
+---
+
+
+* “Per ogni” → `GROUP BY`
+* “Senza” → `LEFT JOIN ... IS NULL`
+* “Con” → `INNER JOIN + WHERE`
+
+---
