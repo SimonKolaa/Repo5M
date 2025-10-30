@@ -17,11 +17,9 @@
 }o--}o   = N:N (molti a molti)
 ```
 
-### 💡 TRUCCO: Leggere la cardinalità dal testo
-
-**Dal testo ai simboli:**
+### 💡 TRUCCO: Dal testo ai simboli
 - "Un professore insegna **molti** corsi" → `PROFESSORE ||--}o CORSO`
-- "Uno studente può frequentare **molti** corsi" → `STUDENTE }o--}o CORSO`
+- "Uno studente frequenta **molti** corsi" → `STUDENTE }o--}o CORSO`
 - "Un cliente fa **molti** ordini" → `CLIENTE ||--}o ORDINE`
 
 ---
@@ -30,14 +28,14 @@
 
 ### ⚠️ REGOLA ORO:
 **Relazione 1:N** → La FK va nella tabella **"N"** (quella dei molti)
+**Relazione N:N** → Crea **tabella intermedia** con 2 FK che diventano PK composta
 
-### Esempio pratico:
+### Esempio 1:N
 ```
 "Ogni studente può sostenere molti esami"
 STUDENTE ||--}o ESAME
 ```
-
-➡️ La FK va in **ESAME** (è il lato "molti")
+➡️ FK va in **ESAME**
 
 ```sql
 CREATE TABLE Studenti (
@@ -55,185 +53,251 @@ CREATE TABLE Esami (
 );
 ```
 
-### Altro esempio:
+### Esempio N:N
 ```
-"Un artista può pubblicare molti album"
-ARTISTA ||--}o ALBUM
+"Uno studente frequenta molti corsi, un corso ha molti studenti"
+STUDENTE }o--}o CORSO
 ```
-
-➡️ La FK va in **ALBUM**
+➡️ Tabella intermedia con 2 FK
 
 ```sql
-CREATE TABLE Artista (
-    ID_Artista INTEGER PRIMARY KEY,
-    Nome TEXT NOT NULL,
-    Cognome TEXT NOT NULL
+CREATE TABLE Studente (
+    Matricola INTEGER PRIMARY KEY,
+    Nome TEXT NOT NULL
 );
 
-CREATE TABLE Album (
-    ID_Album INTEGER PRIMARY KEY,
-    Titolo TEXT NOT NULL,
-    Prezzo FLOAT,
-    ID_Artista INTEGER,  -- ⬅️ FK qui!
-    FOREIGN KEY (ID_Artista) REFERENCES Artista(ID_Artista)
+CREATE TABLE Corso (
+    ID_Corso INTEGER PRIMARY KEY,
+    Nome_Corso TEXT NOT NULL
+);
+
+-- ⬅️ Tabella intermedia
+CREATE TABLE Iscrizione (
+    Matricola INTEGER,
+    ID_Corso INTEGER,
+    Voto INTEGER,
+    PRIMARY KEY (Matricola, ID_Corso),  -- PK composta
+    FOREIGN KEY (Matricola) REFERENCES Studente(Matricola),
+    FOREIGN KEY (ID_Corso) REFERENCES Corso(ID_Corso)
 );
 ```
 
-### 🎯 DOMANDA VELOCE per decidere dove mettere FK:
-**"Chi ha molti di cosa?"**
-- Studente ha molti Esami → FK in Esami
-- Artista ha molti Album → FK in Album
-- Categoria ha molti Prodotti → FK in Prodotti
-
 ---
 
-## 🔹 PARTE 3: INSERT DEI DATI
+## 🔹 PARTE 3: FUNZIONI AGGREGATE
 
-### Sintassi base:
-```sql
-INSERT INTO Studenti (Matricola, Nome, Cognome) 
-VALUES (101, 'Mario', 'Rossi');
-```
+### Le 5 funzioni principali:
 
-### Con INSERT OR IGNORE (per evitare errori):
-```sql
-INSERT OR IGNORE INTO Studenti (Matricola, Nome, Cognome) 
-VALUES (101, 'Mario', 'Rossi');
-```
-💡 Usa "OR IGNORE" se hai paura di inserire dati duplicati
+| Funzione | Cosa fa | Esempio |
+|----------|---------|---------|
+| `COUNT(*)` o `COUNT(colonna)` | Conta le righe | `COUNT(*)` conta tutte le righe |
+| `AVG(colonna)` | Calcola la media | `AVG(Voto)` media dei voti |
+| `SUM(colonna)` | Somma i valori | `SUM(Prezzo)` totale prezzi |
+| `MAX(colonna)` | Trova il massimo | `MAX(Voto)` voto più alto |
+| `MIN(colonna)` | Trova il minimo | `MIN(Voto)` voto più basso |
 
-### Inserire più righe insieme:
-```sql
-INSERT INTO Esami (Matricola, Corso, Voto) VALUES
-    (101, 'Matematica', 28),
-    (101, 'Informatica', 30),
-    (101, 'Fisica', 27);
-```
-
----
-
-## 🔹 PARTE 4: LE 3 QUERY SEMPLICI (tipo verifica)
-
-### 📌 QUERY TIPO 1: Elenco semplice (SELECT base)
-
-**Testo tipico:** "Elenca tutti gli studenti con matricola, nome e cognome"
+### Esempi pratici:
 
 ```sql
-SELECT Matricola, Nome, Cognome 
-FROM Studenti;
+-- Conta tutti gli studenti
+SELECT COUNT(*) AS Totale_Studenti FROM Studenti;
+
+-- Voto medio di tutti gli esami
+SELECT AVG(Voto) AS Media_Voti FROM Esami;
+
+-- Voto massimo e minimo
+SELECT MAX(Voto) AS Voto_Max, MIN(Voto) AS Voto_Min FROM Esami;
+
+-- Somma totale dei prezzi
+SELECT SUM(Prezzo) AS Totale FROM Album;
 ```
 
-**Oppure:** "Elenca tutti gli album con titolo e prezzo"
-```sql
-SELECT Titolo, Prezzo 
-FROM Album;
-```
+### ⚠️ IMPORTANTE: Con GROUP BY
 
-💡 **Quando usarla:** Quando il testo dice "elenca tutti...", "mostra tutti..."
-
----
-
-### 📌 QUERY TIPO 2: JOIN + WHERE (collegare e filtrare)
-
-**Testo tipico:** "Mostra i corsi e i voti di uno studente specifico (matricola 101)"
-
-```sql
-SELECT Corso, Voto
-FROM Esami
-WHERE Matricola = 101;
-```
-
-**Versione con JOIN (se vuoi anche il nome dello studente):**
-```sql
-SELECT S.Nome, S.Cognome, E.Corso, E.Voto
-FROM Studenti S
-JOIN Esami E ON S.Matricola = E.Matricola
-WHERE S.Matricola = 101;
-```
-
-**Altro esempio:** "Mostra gli album di Vasco Rossi con il prezzo"
-```sql
-SELECT A.Titolo, A.Prezzo
-FROM Album A
-JOIN Artista R ON A.ID_Artista = R.ID_Artista
-WHERE R.Nome = 'Vasco' AND R.Cognome = 'Rossi';
-```
-
-💡 **Quando usarla:** Quando vedi "di uno specifico...", "solo quelli con...", "filtra per..."
-
-**Schema mentale JOIN:**
-```
-FROM Tabella1 T1
-JOIN Tabella2 T2 ON T1.colonna_FK = T2.colonna_PK
-WHERE condizione
-```
-
----
-
-### 📌 QUERY TIPO 3: GROUP BY (raggruppare e contare)
-
-**Testo tipico:** "Conta il numero di esami per ogni studente"
+Quando usi **GROUP BY**, le funzioni aggregate calcolano **per ogni gruppo**:
 
 ```sql
-SELECT Matricola, COUNT(*) AS Numero_Esami
+-- Media voti PER OGNI studente
+SELECT Matricola, AVG(Voto) AS Media
 FROM Esami
 GROUP BY Matricola;
 ```
 
-**Con nome studente (usando JOIN):**
-```sql
-SELECT S.Nome, S.Cognome, COUNT(E.Id) AS Numero_Esami
-FROM Studenti S
-JOIN Esami E ON S.Matricola = E.Matricola
-GROUP BY S.Matricola;
+**Risultato:**
+```
+Matricola | Media
+101       | 28.3
+102       | 27.0
+103       | 29.5
 ```
 
-**Altro esempio:** "Conta gli album per ogni artista"
+💡 **Regola:** Se nel testo leggi "PER OGNI" → usa `GROUP BY` + funzione aggregata
+
+---
+
+## 🔹 PARTE 4: LE 3 QUERY TIPO VERIFICA
+
+### 📌 QUERY TIPO 1: SELECT con JOIN e filtri
+
+**Testo:** "Mostra gli album di Vasco Rossi ordinati per prezzo"
+
 ```sql
-SELECT R.Nome, R.Cognome, COUNT(A.ID_Album) AS Numero_Album
+SELECT A.Titolo, A.Prezzo
+FROM Album A
+JOIN Artista R ON A.ID_Artista = R.ID_Artista
+WHERE R.Nome = 'Vasco' AND R.Cognome = 'Rossi'
+ORDER BY A.Prezzo ASC;
+```
+
+**Quando usarla:** "Mostra...", "Elenca...", "Filtra per..."
+
+---
+
+### 📌 QUERY TIPO 2: JOIN con 2-3 tabelle
+
+**Testo:** "Mostra studenti con i loro corsi e il professore che li insegna"
+
+```sql
+SELECT S.Nome AS Studente, C.Nome_Corso, P.Cognome AS Professore
+FROM Studente S
+JOIN Iscrizione I ON S.Matricola = I.Matricola
+JOIN Corso C ON I.ID_Corso = C.ID_Corso
+JOIN Professore P ON C.ID_Professore = P.ID_Professore;
+```
+
+**Spiegazione passo-passo:**
+1. Parto da `Studente` (tabella principale)
+2. Mi collego a `Iscrizione` (tabella intermedia N:N)
+3. Da `Iscrizione` vado a `Corso`
+4. Da `Corso` vado a `Professore`
+5. Ogni JOIN ha la sua condizione `ON` con FK = PK
+
+**Quando usarla:** Quando i dati sono sparsi in 3+ tabelle collegate
+
+---
+
+### 📌 QUERY TIPO 3: GROUP BY con funzioni aggregate
+
+**Testo:** "Conta il numero di album per ogni artista e calcola il prezzo medio"
+
+```sql
+SELECT R.Nome, R.Cognome, 
+       COUNT(A.ID_Album) AS Num_Album,
+       AVG(A.Prezzo) AS Prezzo_Medio
 FROM Artista R
 JOIN Album A ON R.ID_Artista = A.ID_Artista
 GROUP BY R.ID_Artista;
 ```
 
-**Esempio con media:** "Calcola la media voti per ogni studente"
-```sql
-SELECT S.Nome, S.Cognome, AVG(E.Voto) AS Media_Voti
-FROM Studenti S
-JOIN Esami E ON S.Matricola = E.Matricola
-GROUP BY S.Matricola;
+**Spiegazione:**
+1. Collego Artista e Album con JOIN
+2. `GROUP BY R.ID_Artista` → raggruppa per artista
+3. `COUNT(A.ID_Album)` → conta gli album di OGNI artista
+4. `AVG(A.Prezzo)` → calcola prezzo medio di OGNI artista
+
+**Risultato:**
+```
+Nome  | Cognome  | Num_Album | Prezzo_Medio
+Vasco | Rossi    | 4         | 13.63
+Lucio | Battisti | 3         | 13.67
 ```
 
-💡 **Quando usarla:** Quando leggi "PER OGNI...", "conta...", "numero di...", "media di..."
-
-**Funzioni aggregate più usate:**
-- `COUNT(*)` = conta le righe
-- `AVG(colonna)` = calcola la media
-- `SUM(colonna)` = somma
-- `MAX(colonna)` = massimo
-- `MIN(colonna)` = minimo
+**Quando usarla:** "PER OGNI...", "conta...", "media di..."
 
 ---
 
-## 🔹 PARTE 5: SCHEMA DECISIONALE VELOCE
+## 🔹 PARTE 5: QUERY PIÙ DIFFICILI (con 2-3 JOIN)
 
-### Come capire quale query serve:
+### 🎓 Sistema Università: STUDENTE - ISCRIZIONE - CORSO - PROFESSORE
 
-| Parola chiave nel testo | Query da usare | Esempio |
-|--------------------------|----------------|---------|
-| "Elenca tutti..." | `SELECT * FROM Tabella` | SELECT * FROM Studenti |
-| "Solo...", "Filtra..." | `WHERE` | WHERE Matricola = 101 |
-| "Di uno specifico..." | `JOIN + WHERE` | JOIN + WHERE Nome = 'Mario' |
-| "**PER OGNI**..." | `GROUP BY` | GROUP BY Matricola |
-| "Conta...", "Numero di..." | `COUNT() + GROUP BY` | COUNT(*) GROUP BY ... |
-| "Media di..." | `AVG() + GROUP BY` | AVG(Voto) GROUP BY ... |
-| "Ordina per..." | `ORDER BY` | ORDER BY Prezzo ASC |
+### Query 1: Studenti con corsi e professori (3 JOIN)
+```sql
+SELECT S.Nome, S.Cognome, C.Nome_Corso, P.Cognome AS Prof
+FROM Studente S
+JOIN Iscrizione I ON S.Matricola = I.Matricola
+JOIN Corso C ON I.ID_Corso = C.ID_Corso
+JOIN Professore P ON C.ID_Professore = P.ID_Professore;
+```
+💡 Collego 4 tabelle in sequenza
 
 ---
 
-## 🔹 PARTE 6: ESEMPI COMPLETI PRONTI
+### Query 2: Media voti per corso (2 JOIN + GROUP BY)
+```sql
+SELECT C.Nome_Corso, AVG(I.Voto) AS Media_Voti
+FROM Corso C
+JOIN Iscrizione I ON C.ID_Corso = I.ID_Corso
+WHERE I.Voto >= 18
+GROUP BY C.ID_Corso;
+```
+💡 WHERE prima di GROUP BY = filtro le righe, poi raggruppo
 
-### 📚 ESEMPIO 1: STUDENTI-ESAMI (il modello del prof)
+---
+
+### Query 3: Numero corsi per professore con media crediti (JOIN + GROUP BY)
+```sql
+SELECT P.Nome, P.Cognome,
+       COUNT(C.ID_Corso) AS Num_Corsi,
+       AVG(C.Crediti) AS Media_Crediti
+FROM Professore P
+JOIN Corso C ON P.ID_Professore = C.ID_Professore
+GROUP BY P.ID_Professore;
+```
+💡 Raggruppo per professore, conto i corsi e calcolo media crediti
+
+---
+
+### Query 4: Studenti con almeno 3 esami da 30 (WHERE + GROUP BY + HAVING)
+```sql
+SELECT S.Nome, S.Cognome, COUNT(*) AS Num_Trenta
+FROM Studente S
+JOIN Iscrizione I ON S.Matricola = I.Matricola
+WHERE I.Voto = 30
+GROUP BY S.Matricola
+HAVING COUNT(*) >= 3;
+```
+
+**Spiegazione:**
+1. `WHERE I.Voto = 30` → filtro SOLO i voti da 30
+2. `GROUP BY S.Matricola` → raggruppo per studente
+3. `HAVING COUNT(*) >= 3` → mostro solo chi ha ALMENO 3 trenta
+
+💡 **DIFFERENZA WHERE vs HAVING:**
+- `WHERE` = filtra le RIGHE (prima del raggruppamento)
+- `HAVING` = filtra i GRUPPI (dopo il raggruppamento)
+
+---
+
+### Query 5: Top 3 studenti per media voti (LIMIT)
+```sql
+SELECT S.Nome, S.Cognome, AVG(I.Voto) AS Media
+FROM Studente S
+JOIN Iscrizione I ON S.Matricola = I.Matricola
+GROUP BY S.Matricola
+ORDER BY Media DESC
+LIMIT 3;
+```
+💡 `LIMIT 3` prende solo i primi 3 risultati
+
+---
+
+## 🔹 PARTE 6: SCHEMA DECISIONALE RAPIDO
+
+| Parola chiave nel testo | Comando SQL | Note |
+|--------------------------|-------------|------|
+| "Elenca tutti..." | `SELECT * FROM Tabella` | |
+| "Filtra per...", "Solo..." | `WHERE` | |
+| "Ordina per..." | `ORDER BY colonna ASC/DESC` | |
+| "**PER OGNI**..." | `GROUP BY` | Quasi sempre! |
+| "Conta...", "Numero di..." | `COUNT() + GROUP BY` | |
+| "Media di..." | `AVG() + GROUP BY` | |
+| "Totale di..." | `SUM() + GROUP BY` | |
+| "Almeno / più di..." | `HAVING` | Dopo GROUP BY |
+| Dati in 2+ tabelle | `JOIN` | |
+
+---
+
+## 🔹 PARTE 8: MODELLO COMPLETO STUDENTI-ESAMI
 
 **Diagramma ER:**
 ```
@@ -257,15 +321,29 @@ CREATE TABLE Esami (
 );
 ```
 
-**Le 3 query:**
+**INSERT:**
+```sql
+INSERT OR IGNORE INTO Studenti (Matricola, Nome, Cognome) VALUES
+    (101, 'Mario', 'Rossi'),
+    (102, 'Lucia', 'Bianchi');
+
+INSERT INTO Esami (Matricola, Corso, Voto) VALUES
+    (101, 'Matematica', 28),
+    (101, 'Informatica', 30),
+    (101, 'Fisica', 27),
+    (102, 'Matematica', 28),
+    (102, 'Informatica', 30),
+    (102, 'Fisica', 27);
+```
+
+**Le 3 query tipo verifica:**
+
 ```sql
 -- 1. Tutti gli studenti
 SELECT Matricola, Nome, Cognome FROM Studenti;
 
 -- 2. Corsi e voti di matricola 101
-SELECT Corso, Voto 
-FROM Esami 
-WHERE Matricola = 101;
+SELECT Corso, Voto FROM Esami WHERE Matricola = 101;
 
 -- 3. Numero esami per studente
 SELECT S.Nome, S.Cognome, COUNT(E.Id) AS Num_Esami
@@ -276,237 +354,45 @@ GROUP BY S.Matricola;
 
 ---
 
-### 🎵 ESEMPIO 2: ARTISTI-ALBUM (come quello del prof)
+## ✅ CHECKLIST FINALE
 
-**Diagramma ER:**
-```
-ARTISTA ||--}o ALBUM : "pubblica"
-```
-
-**CREATE TABLE:**
-```sql
-CREATE TABLE Artista (
-    ID_Artista INTEGER PRIMARY KEY,
-    Nome TEXT NOT NULL,
-    Cognome TEXT NOT NULL
-);
-
-CREATE TABLE Album (
-    ID_Album INTEGER PRIMARY KEY,
-    Titolo TEXT NOT NULL,
-    Prezzo FLOAT,
-    ID_Artista INTEGER,
-    FOREIGN KEY (ID_Artista) REFERENCES Artista(ID_Artista)
-);
-```
-
-**Le 3 query:**
-```sql
--- 1. Tutti gli artisti
-SELECT Nome, Cognome FROM Artista;
-
--- 2. Album di Vasco Rossi ordinati per prezzo
-SELECT A.Titolo, A.Prezzo
-FROM Album A
-JOIN Artista R ON A.ID_Artista = R.ID_Artista
-WHERE R.Nome = 'Vasco' AND R.Cognome = 'Rossi'
-ORDER BY A.Prezzo ASC;
-
--- 3. Numero album e prezzo medio per artista
-SELECT R.Nome, R.Cognome, 
-       COUNT(A.ID_Album) AS Num_Album,
-       AVG(A.Prezzo) AS Prezzo_Medio
-FROM Artista R
-JOIN Album A ON R.ID_Artista = A.ID_Artista
-GROUP BY R.ID_Artista;
-```
-
----
-
-### 🏪 ESEMPIO 3: CATEGORIA-PRODOTTI
-
-**Diagramma ER:**
-```
-CATEGORIA ||--}o PRODOTTO : "contiene"
-```
-
-**CREATE TABLE:**
-```sql
-CREATE TABLE Categoria (
-    ID_Categoria INTEGER PRIMARY KEY,
-    Nome_Categoria TEXT NOT NULL
-);
-
-CREATE TABLE Prodotto (
-    ID_Prodotto INTEGER PRIMARY KEY,
-    Nome_Prodotto TEXT NOT NULL,
-    Prezzo FLOAT NOT NULL,
-    Quantita INTEGER,
-    ID_Categoria INTEGER,
-    FOREIGN KEY (ID_Categoria) REFERENCES Categoria(ID_Categoria)
-);
-```
-
-**Le 3 query:**
-```sql
--- 1. Tutte le categorie
-SELECT Nome_Categoria FROM Categoria;
-
--- 2. Prodotti della categoria 'Elettronica' con prezzo > 50
-SELECT P.Nome_Prodotto, P.Prezzo
-FROM Prodotto P
-JOIN Categoria C ON P.ID_Categoria = C.ID_Categoria
-WHERE C.Nome_Categoria = 'Elettronica' AND P.Prezzo > 50;
-
--- 3. Numero prodotti per categoria
-SELECT C.Nome_Categoria, COUNT(P.ID_Prodotto) AS Num_Prodotti
-FROM Categoria C
-JOIN Prodotto P ON C.ID_Categoria = P.ID_Categoria
-GROUP BY C.Nome_Categoria;
-```
-
----
-
-### 📖 ESEMPIO 4: AUTORE-LIBRI
-
-**Diagramma ER:**
-```
-AUTORE ||--}o LIBRO : "scrive"
-```
-
-**CREATE TABLE:**
-```sql
-CREATE TABLE Autore (
-    ID_Autore INTEGER PRIMARY KEY,
-    Nome TEXT NOT NULL,
-    Cognome TEXT NOT NULL
-);
-
-CREATE TABLE Libro (
-    ID_Libro INTEGER PRIMARY KEY,
-    Titolo TEXT NOT NULL,
-    Anno INTEGER,
-    Prezzo FLOAT,
-    ID_Autore INTEGER,
-    FOREIGN KEY (ID_Autore) REFERENCES Autore(ID_Autore)
-);
-```
-
-**Le 3 query:**
-```sql
--- 1. Tutti gli autori
-SELECT Nome, Cognome FROM Autore;
-
--- 2. Libri di Alessandro Manzoni
-SELECT L.Titolo, L.Anno, L.Prezzo
-FROM Libro L
-JOIN Autore A ON L.ID_Autore = A.ID_Autore
-WHERE A.Nome = 'Alessandro' AND A.Cognome = 'Manzoni';
-
--- 3. Numero libri per autore
-SELECT A.Nome, A.Cognome, COUNT(L.ID_Libro) AS Num_Libri
-FROM Autore A
-JOIN Libro L ON A.ID_Autore = L.ID_Autore
-GROUP BY A.ID_Autore;
-```
-
----
-
-## 🔹 PARTE 7: ERRORI COMUNI DA EVITARE
-
-### ❌ 1. Dimenticare la condizione ON nel JOIN
-```sql
--- SBAGLIATO:
-SELECT * FROM Studenti S JOIN Esami E;
-
--- GIUSTO:
-SELECT * FROM Studenti S 
-JOIN Esami E ON S.Matricola = E.Matricola;
-```
-
-### ❌ 2. Usare GROUP BY senza funzione aggregata
-```sql
--- SBAGLIATO:
-SELECT Nome FROM Studenti GROUP BY Matricola;
-
--- GIUSTO:
-SELECT Nome, COUNT(*) FROM Studenti 
-JOIN Esami ON ... GROUP BY Matricola;
-```
-
-### ❌ 3. Dimenticare gli alias quando necessario
-```sql
--- SBAGLIATO (se entrambe hanno colonna Nome):
-SELECT Nome FROM Studenti JOIN Corsi;
-
--- GIUSTO:
-SELECT S.Nome, C.Nome_Corso 
-FROM Studenti S JOIN Corsi C ON ...;
-```
-
-### ❌ 4. Mettere la FK nella tabella sbagliata
-```
-"Un cliente fa molti ordini"
-CLIENTE ||--}o ORDINE
-```
-➡️ FK va in ORDINE (non in Cliente!)
-
----
-
-## ✅ CHECKLIST FINALE VERIFICA
-
-### Prima di consegnare controlla:
-
-**Diagramma ER:**
-- [ ] Entità disegnate (rettangoli)
-- [ ] Attributi inseriti (PK sottolineata)
+### Diagramma ER:
+- [ ] Entità con attributi
+- [ ] PK sottolineata
 - [ ] Relazioni con verbi
-- [ ] Cardinalità corrette (`||--}o`)
+- [ ] Cardinalità (`||--}o`)
 
-**CREATE TABLE:**
+### CREATE TABLE:
 - [ ] PRIMARY KEY in ogni tabella
-- [ ] FOREIGN KEY nella tabella giusta (lato "N")
-- [ ] NOT NULL dove serve
-- [ ] Nomi tabelle/colonne corretti
+- [ ] FOREIGN KEY nel lato "N" per 1:N
+- [ ] Tabella intermedia per N:N con PK composta
+- [ ] NOT NULL dove necessario
 
-**INSERT:**
-- [ ] Valori nell'ordine giusto
-- [ ] Testo tra apici singoli `'Mario'`
-- [ ] Numeri senza apici `101`
-
-**QUERY:**
-- [ ] SELECT con colonne giuste
-- [ ] FROM con tabella corretta
-- [ ] JOIN se collego tabelle
-- [ ] ON con FK = PK
-- [ ] WHERE per filtrare
-- [ ] GROUP BY se c'è "per ogni"
-- [ ] Alias (S, E, A) usati correttamente
+### Query:
+- [ ] Alias usati (S, E, C, P)
+- [ ] JOIN con ON corretto (FK = PK)
+- [ ] WHERE per filtrare righe
+- [ ] GROUP BY quando c'è "per ogni"
+- [ ] HAVING per filtrare gruppi
+- [ ] ORDER BY se richiesto
 
 ---
 
-## 🎯 TRUCCO FINALE: Ordine delle clausole SQL
+## 🎯 ORDINE CLAUSOLE SQL (DA RICORDARE!)
 
-**Ricorda sempre questo ordine:**
 ```sql
 SELECT colonne
 FROM tabella
 JOIN altra_tabella ON condizione
 WHERE filtro_righe
 GROUP BY colonna
+HAVING filtro_gruppi
 ORDER BY colonna
 LIMIT numero
 ```
 
-💡 Non puoi mettere WHERE dopo GROUP BY, o JOIN dopo WHERE!
+⚠️ **Non puoi cambiare l'ordine!** WHERE va prima di GROUP BY, HAVING dopo, ecc.
 
 ---
 
-**🍀 IN BOCCA AL LUPO PER DOMANI!**
-
-Stampa questo schema e tienilo vicino. Quando leggi il testo della verifica:
-1. Cerchia le entità → Diagramma ER
-2. Sottolinea "molti", "uno", "può" → Cardinalità
-3. Cerchia "per ogni", "conta", "filtra" → Tipo di query
-
-Vedrai che andrà benissimo! 💪
+**🍀 BUONA FORTUNA!**
