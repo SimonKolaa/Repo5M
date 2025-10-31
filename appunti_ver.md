@@ -297,7 +297,9 @@ LIMIT 3;
 
 ---
 
-## 🔹 PARTE 8: MODELLO COMPLETO STUDENTI-ESAMI
+## 🔹 PARTE 8: MODELLI COMPLETI CON ESEMPI
+
+### 📚 MODELLO 1: STUDENTI-ESAMI (base)
 
 **Diagramma ER:**
 ```
@@ -351,6 +353,95 @@ FROM Studenti S
 JOIN Esami E ON S.Matricola = E.Matricola
 GROUP BY S.Matricola;
 ```
+
+---
+
+### 🎵 MODELLO 2: NEGOZIO MUSICA (più complesso)
+
+**Diagramma ER:**
+```
+ARTISTI ||--}o ALBUMVIRTUALE : "pubblica"
+NEGOZI ||--}o DIPENDENTI : "impiega"
+NEGOZI ||--}o SCONTRINO : "genera"
+SCONTRINO ||--}o RIGHESCONTRINO : "contiene"
+ALBUMVIRTUALE ||--}o RIGHESCONTRINO : "venduto_in"
+```
+
+**CREATE TABLE:**
+```sql
+CREATE TABLE Artisti (
+    id INTEGER PRIMARY KEY,
+    nome TEXT NOT NULL,
+    cognome TEXT NOT NULL
+);
+
+CREATE TABLE AlbumVirtuale (
+    codice INTEGER PRIMARY KEY,
+    titolo TEXT NOT NULL,
+    prezzo REAL NOT NULL,
+    artista_id INTEGER,
+    FOREIGN KEY (artista_id) REFERENCES Artisti(id)
+);
+
+CREATE TABLE Negozi (
+    codice INTEGER PRIMARY KEY,
+    indirizzo TEXT NOT NULL,
+    citta TEXT NOT NULL
+);
+
+CREATE TABLE Scontrino (
+    id INTEGER PRIMARY KEY,
+    data DATE NOT NULL,
+    negozio_id INTEGER,
+    importo_totale REAL NOT NULL,
+    FOREIGN KEY (negozio_id) REFERENCES Negozi(codice)
+);
+
+CREATE TABLE RigheScontrino (
+    id INTEGER PRIMARY KEY,
+    scontrino_id INTEGER,
+    album_id INTEGER,
+    quantita INTEGER NOT NULL,
+    FOREIGN KEY (scontrino_id) REFERENCES Scontrino(id),
+    FOREIGN KEY (album_id) REFERENCES AlbumVirtuale(codice)
+);
+```
+
+**Query esempio (come quelle del prof):**
+
+```sql
+-- 1. Album di Vasco Rossi ordinati per prezzo
+SELECT A.titolo, A.prezzo, R.nome, R.cognome
+FROM AlbumVirtuale A
+JOIN Artisti R ON R.id = A.artista_id 
+WHERE R.nome = 'Vasco' AND R.cognome = 'Rossi'
+ORDER BY A.prezzo ASC;
+
+-- 2. Tutti gli album con nome artista
+SELECT A.titolo, R.nome, R.cognome
+FROM AlbumVirtuale A
+JOIN Artisti R ON R.id = A.artista_id;
+
+-- 3. Numero album per artista e prezzo medio
+SELECT R.nome, R.cognome, 
+       COUNT(*) AS num_album, 
+       AVG(A.prezzo) AS prezzo_medio
+FROM AlbumVirtuale A
+JOIN Artisti R ON R.id = A.artista_id
+GROUP BY R.nome, R.cognome;
+
+-- 4. Totale vendite per artista (con 2 JOIN)
+SELECT A.artista_id, COUNT(*) AS num_vendite
+FROM AlbumVirtuale A
+JOIN RigheScontrino RS ON A.codice = RS.album_id
+GROUP BY A.artista_id;
+
+-- 5. Album con 'a' nel titolo (LIKE)
+SELECT * FROM AlbumVirtuale
+WHERE titolo LIKE '%a%';
+```
+
+💡 **Nota:** Questo modello ha più tabelle collegate, utile per query con 2-3 JOIN
 
 ---
 
