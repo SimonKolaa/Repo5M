@@ -206,80 +206,104 @@ Lucio | Battisti | 3         | 13.67
 
 ---
 
-## 🔹 PARTE 5: QUERY PIÙ DIFFICILI (con 2-3 JOIN)
+## 🔹 PARTE 5: QUERY PIÙ DIFFICILI
 
-### 🎓 Sistema Università: STUDENTE - ISCRIZIONE - CORSO - PROFESSORE
+Query 1: Mostrare il numero totale di album pubblicati da ogni artista
 
-### Query 1: Studenti con corsi e professori (3 JOIN)
-```sql
-SELECT S.Nome, S.Cognome, C.Nome_Corso, P.Cognome AS Prof
-FROM Studente S
-JOIN Iscrizione I ON S.Matricola = I.Matricola
-JOIN Corso C ON I.ID_Corso = C.ID_Corso
-JOIN Professore P ON C.ID_Professore = P.ID_Professore;
-```
-💡 Collego 4 tabelle in sequenza
+(JOIN + GROUP BY + COUNT)
 
----
+SELECT R.nome, R.cognome, COUNT(A.id) AS Numero_Album
+FROM Artista R
+JOIN Album A ON R.id = A.artista_id
+GROUP BY R.id;
 
-### Query 2: Media voti per corso (2 JOIN + GROUP BY)
-```sql
-SELECT C.Nome_Corso, AVG(I.Voto) AS Media_Voti
-FROM Corso C
-JOIN Iscrizione I ON C.ID_Corso = I.ID_Corso
-WHERE I.Voto >= 18
-GROUP BY C.ID_Corso;
-```
-💡 WHERE prima di GROUP BY = filtro le righe, poi raggruppo
 
----
+💡 Indica quanti album ha prodotto ciascun artista.
 
-### Query 3: Numero corsi per professore con media crediti (JOIN + GROUP BY)
-```sql
-SELECT P.Nome, P.Cognome,
-       COUNT(C.ID_Corso) AS Num_Corsi,
-       AVG(C.Crediti) AS Media_Crediti
-FROM Professore P
-JOIN Corso C ON P.ID_Professore = C.ID_Professore
-GROUP BY P.ID_Professore;
-```
-💡 Raggruppo per professore, conto i corsi e calcolo media crediti
+Query 2: Trovare gli album che hanno venduto più di 10 copie
 
----
+(GROUP BY + HAVING)
 
-### Query 4: Studenti con almeno 3 esami da 30 (WHERE + GROUP BY + HAVING)
-```sql
-SELECT S.Nome, S.Cognome, COUNT(*) AS Num_Trenta
-FROM Studente S
-JOIN Iscrizione I ON S.Matricola = I.Matricola
-WHERE I.Voto = 30
-GROUP BY S.Matricola
-HAVING COUNT(*) >= 3;
-```
+SELECT A.titolo, SUM(V.quantità) AS Copie_Vendute
+FROM Album A
+JOIN Vendita V ON A.id = V.album_id
+GROUP BY A.titolo
+HAVING SUM(V.quantità) > 10;
 
-**Spiegazione:**
-1. `WHERE I.Voto = 30` → filtro SOLO i voti da 30
-2. `GROUP BY S.Matricola` → raggruppo per studente
-3. `HAVING COUNT(*) >= 3` → mostro solo chi ha ALMENO 3 trenta
 
-💡 **DIFFERENZA WHERE vs HAVING:**
-- `WHERE` = filtra le RIGHE (prima del raggruppamento)
-- `HAVING` = filtra i GRUPPI (dopo il raggruppamento)
+💡 Mostra solo gli album che hanno venduto oltre 10 copie in totale.
 
----
+Query 3: Elencare tutti gli album venduti in un negozio specifico
 
-### Query 5: Top 3 studenti per media voti (LIMIT)
-```sql
-SELECT S.Nome, S.Cognome, AVG(I.Voto) AS Media
-FROM Studente S
-JOIN Iscrizione I ON S.Matricola = I.Matricola
-GROUP BY S.Matricola
-ORDER BY Media DESC
-LIMIT 3;
-```
-💡 `LIMIT 3` prende solo i primi 3 risultati
+(JOIN + WHERE)
 
----
+SELECT A.titolo, A.prezzo, N.nome AS Negozio
+FROM Album A
+JOIN Vendita V ON A.id = V.album_id
+JOIN Negozio N ON V.negozio_id = N.id
+WHERE N.nome = 'Music Planet';
+
+
+💡 Visualizza gli album acquistati nel negozio “Music Planet”, con titolo e prezzo.
+
+Query 4: Calcolare il totale incassato da ciascun artista
+
+(JOIN + GROUP BY + SUM)
+
+SELECT R.nome, R.cognome, SUM(A.prezzo * V.quantità) AS Totale_Incasso
+FROM Artista R
+JOIN Album A ON R.id = A.artista_id
+JOIN Vendita V ON A.id = V.album_id
+GROUP BY R.id;
+
+
+💡 Mostra quanto ha guadagnato ogni artista dalle vendite complessive.
+
+Query 5: Prezzo medio di tutti gli album in catalogo
+
+(Funzione aggregata semplice)
+
+SELECT AVG(prezzo) AS Prezzo_Medio
+FROM Album;
+
+
+💡 Calcola il prezzo medio di tutti gli album disponibili.
+
+Query 6: Media delle copie vendute per ogni negozio
+
+(JOIN + GROUP BY + AVG)
+
+SELECT N.nome AS Negozio, AVG(V.quantità) AS Media_Copie
+FROM Negozio N
+JOIN Vendita V ON N.id = V.negozio_id
+GROUP BY N.nome;
+
+
+💡 Mostra la quantità media di copie vendute da ciascun negozio musicale.
+
+Query 7: Tutti gli album, anche quelli senza vendite
+
+(LEFT JOIN + GROUP BY)
+
+SELECT A.titolo, SUM(V.quantità) AS Copie_Vendute
+FROM Album A
+LEFT JOIN Vendita V ON A.id = V.album_id
+GROUP BY A.titolo;
+
+
+💡 Visualizza tutti gli album, anche quelli mai venduti (quantità = NULL).
+
+Query 8: Quantità totale venduta per ogni album
+
+(JOIN + GROUP BY + SUM)
+
+SELECT A.titolo, SUM(V.quantità) AS Copie_Totali
+FROM Album A
+JOIN Vendita V ON A.id = V.album_id
+GROUP BY A.titolo;
+
+
+💡 Somma le copie vendute per ogni album nel sistema.
 
 ## 🔹 PARTE 6: SCHEMA DECISIONALE RAPIDO
 
