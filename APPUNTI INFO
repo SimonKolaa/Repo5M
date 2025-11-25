@@ -147,6 +147,7 @@ SELECT S.NOME, C.NOME_CLASSE
 FROM STUDENTE S 
 JOIN CLASSE C ON S.ID_CLASSE = C.ID_CLASSE;
 ```
+per collegare le due tabelle uso la foreign key della "N" che deve essere uguale alla PK dell'altra
 ### LEFT JOIN
 mantiene le informazioni della tabella di sinistra
 anche se non ci sono corrispondenze nella tabella di destra
