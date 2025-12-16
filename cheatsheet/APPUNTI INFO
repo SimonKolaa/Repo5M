@@ -616,9 +616,12 @@ WHERE E.ID_Esame IS NULL;
 
 ---
 
+<<<<<<< HEAD
 ✅ **Consiglio finale**
 Durante la verifica, prima fai **diagramma ER**, poi scrivi le **CREATE TABLE** con le chiavi giuste (PK, FK).
 Infine fai le query seguendo le parole chiave nel testo:
+=======
+>>>>>>> 3ca374b06ddadf3c6ee1208097f7a9b170ace968
 
 * “Per ogni” → `GROUP BY`
 * “Senza” → `LEFT JOIN ... IS NULL`
