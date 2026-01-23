@@ -1,0 +1,14 @@
+pagina con elenco di tutte le categorie.
+{% extends "base.html" %}
+
+{% block title %}Categorie{% endblock %}
+
+{% block content %}
+  <h1>Categorie</h1>
+  <ul>
+    {% for category in categories %}
+      <li>{{ category.nome }}</li>
+    {% endfor %}
+  </ul>
+{% endblock %}
+
