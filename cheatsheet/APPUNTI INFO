@@ -632,6 +632,7 @@ Infine fai le query seguendo le parole chiave nel testo:
 > **PROGRAMMATORE:** traduce PRD in codice,
 > responsabile che poi il programma funzioni
 > **CTO/CEO:** stima i costi
+**PM** gantt, pianifica le attività del progetto, sceglie le risorse umane da allocare al progetto, fa una stima dei tempi di consegna sulla base del gantt
 
 * “Per ogni” → `GROUP BY`
 * “Senza” → `LEFT JOIN ... IS NULL`
