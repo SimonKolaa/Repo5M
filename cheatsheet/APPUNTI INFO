@@ -621,7 +621,17 @@ WHERE E.ID_Esame IS NULL;
 Durante la verifica, prima fai **diagramma ER**, poi scrivi le **CREATE TABLE** con le chiavi giuste (PK, FK).
 Infine fai le query seguendo le parole chiave nel testo:
 =======
->>>>>>> 3ca374b06ddadf3c6ee1208097f7a9b170ace968
+>>>>>>> 
+
+
+> **CLIENTE:** definisce requisiti di alto livello
+> **ANALISTA:** comprendere i requisiti del cliente,
+> intermediario tra cliente e programmatore,
+> responsabile del PRD, il programma contenga tutti
+> i requisiti, stima i tempi
+> **PROGRAMMATORE:** traduce PRD in codice,
+> responsabile che poi il programma funzioni
+> **CTO/CEO:** stima i costi
 
 * “Per ogni” → `GROUP BY`
 * “Senza” → `LEFT JOIN ... IS NULL`
